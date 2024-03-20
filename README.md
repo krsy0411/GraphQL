@@ -116,7 +116,7 @@ const typeDefs = gql`
 `;
 ```
 ## 어떤 식으로 사용하나요?
-*arguments부분인 tweet(id: ${여기 이부분})에 해당합니다*
+*arguments부분은 tweet(id: ${여기 이부분})에 해당합니다*
 ```javascript
 {
   allTweets {
