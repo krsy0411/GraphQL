@@ -69,3 +69,64 @@ REST API은 URL의 집합입니다.
 // ``(백틱 : 오직 백틱만 쓰셔야 합니다)사이에 모든 내용이 들어가게 됩니다. 이는 SDL(Schema Definition Language)라고 부릅니다.
 const typeDefs = gql`<이 곳>`
 ```
+#### SDL 등록이 의미하는바
+```javascript
+const typeDefs = gql`
+    type Query {
+        text: String
+        hello: String
+    }
+`;
+```
+윗 내용은 REST API에서 GET url을 생성한 것과 같은 의미를 갖습니다.<br/>
+**사용자가 요청할 수 있도록 하고 싶은 모든 것은 type Query안에 작성되어야합니다**
+```markdown
+**GET** /text
+**GET** /hello
+```
+
+## Scalar Type
+*GraphQL에 내장된 타입 : GraphQL 사용시, 기본 제공되는 타입입니다.*
+* String
+* Int
+* Float
+* Boolean
+* ID
+    * id값을 명시적으로 표시하기 위해 사용
+    * 내부적으로는 String과 동일합니다
+## Arguments
+경로를 세분화하다보면, REST API의 /tweets/:id처럼 사용자의 id에 따라 달라지는 요청들이 있습니다.<br/>
+이는, 명시적으로 적어주는 게 아닌, 동적으로 들어와야하는 값인데, 미리 설정할 수 있는 값이 아니다보니, Arguments로 넘겨줘야합니다(마치, 함수의 인자처럼).
+```javascript
+const typeDefs = gql`
+    type User {
+        id: ID
+        username: String
+    }
+    type Tweet {
+        id: ID
+        text: String
+        author: User
+    }
+    type Query {
+        allTweets: [Tweet]
+        // 여기 이 부분이 바로 Arguments에 해당합니다.
+        tweet(id: ID): Tweet
+    }
+`;
+```
+## 어떤 식으로 사용하나요?
+*arguments부분인 tweet(id: ${여기 이부분})에 해당합니다*
+```javascript
+{
+  allTweets {
+    text
+  }
+  tweet(id: "1") {
+    author {
+      id
+      username
+    }
+  }
+}
+```
