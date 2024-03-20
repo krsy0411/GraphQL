@@ -45,3 +45,27 @@ Under Fetching은,
 로 설정해뒀다고 생각해보시면, 우리는 persons(배열을 넘겨주는) url을 한 번 호출해주고, location key값의 숫자값을 통해서 다시 location정보의 url을 한 번 호출해줘서 찾아야합니다.
 이런 두 번의 귀찮은 과정을, GraphQL은 한 번의 호출로 해결할 수 있도록 도와줍니다.
 위의 일련의 과정, 정보를 덜 받는 바람에 굳이 몇 번 더 호출해야할때를 under-fetching이라고 하는겁니다.
+
+## Apollo Server
+GraphQL은 이전에 봤듯이, Specification(명세서, 문서)에 해당할 뿐입니다.<br/>
+우리가 GraphQL을 사용하려면 해당 명세를 바탕으로 코드로 구현을 해야하는데, 이를 해놓은게 **Apollo Server**입니다(NodeJS server같은 것)<br/>
+Apollo Server는 그 자체로도 서버가 동작하기에 매우 좋고, Express, Fastify같은 NodeJS middleware가 있는 경우(NodeJS Backend)에도 Apollo Server를 최상단에 추가할 수 있습니다.
+
+> 예를 들어, Express로 만들어진 REST API가 있다고 가정했을 경우에 REST API를 GraphQL API로 바꾸고 싶다면, server를 많이 변경 안 하고 그저 미들웨어만 넣어주면 됩니다.
+
+## Query Type
+REST API은 URL의 집합입니다.
+> /users/:id<br/>
+> /features/:id
+
+같은 맥락에서, GraphQL API는 Type의 집합이라고 생각하면 됩니다. 타입을 알려주지 않으면, 오류가 생길 겁니다.
+> GraphQL server에게 서버에 있는 데이터들의 타입을 미리 설명해줘야합니다.
+### Schema(스키마)
+관계형 데이터 베이스의 스키마를 떠올리면 됩니다.<br/>
+마찬가지로, 데이터의 shape을 알려줘야합니다.<br/>
+> 어쩌면 불편하다고 생각할 수 있지만, 안정성 면에서 나쁘지 않으며, 덕분에 어떤 데이터들이 들어오는지 auto-complete를 통해 편하게 알 수도 있기도 합니다.
+```javascript
+// 스키마 사용방식은 다음과 같습니다.
+// ``(백틱 : 오직 백틱만 쓰셔야 합니다)사이에 모든 내용이 들어가게 됩니다. 이는 SDL(Schema Definition Language)라고 부릅니다.
+const typeDefs = gql`<이 곳>`
+```
