@@ -58,7 +58,8 @@ REST API은 URL의 집합입니다.
 > /users/:id<br/>
 > /features/:id
 
-같은 맥락에서, GraphQL API는 Type의 집합이라고 생각하면 됩니다. 타입을 알려주지 않으면, 오류가 생길 겁니다.
+같은 맥락에서, GraphQL API는 Type의 집합이라고 생각하면 됩니다. 타입을 알려주지 않으면, 오류가 생길 겁니다.<br/>
+**GraphQL에서의 query는, REST API의 Get Request를 만드는 것과 같다는 것을 명심해주세요**
 > GraphQL server에게 서버에 있는 데이터들의 타입을 미리 설명해줘야합니다.
 ### Schema(스키마)
 관계형 데이터 베이스의 스키마를 떠올리면 됩니다.<br/>
@@ -79,11 +80,13 @@ const typeDefs = gql`
 `;
 ```
 윗 내용은 REST API에서 GET url을 생성한 것과 같은 의미를 갖습니다.<br/>
-**사용자가 요청할 수 있도록 하고 싶은 모든 것은 type Query안에 작성되어야합니다**
+**사용자가 요청할 수 있도록 하고 싶은 모든 것은 type "Query"안에 작성되어야합니다**<br/>
+*기억하세요. Query라는 타입 안에 명시되어야 GET method를 수행하는 것과 같은 역할을 합니다*
 ```markdown
-**GET** /text
-**GET** /hello
+GET /text
+GET /hello
 ```
+윗 역할과 같은 것을 수행한다고 보시면 됩니다.
 
 ## Scalar Type
 *GraphQL에 내장된 타입 : GraphQL 사용시, 기본 제공되는 타입입니다.*
@@ -118,10 +121,12 @@ const typeDefs = gql`
 ## 어떤 식으로 사용하나요?
 *arguments부분은 tweet(id: ${여기 이부분})에 해당합니다*
 ```javascript
+// 아래 쿼리는 이것과 같습니다 : GET /api/.../tweet/:id
 {
   allTweets {
     text
   }
+  // 이렇게 id를 넣으면 :id 위치에 해당 숫자가 들어가는 셈이죠
   tweet(id: "1") {
     author {
       id
@@ -130,3 +135,98 @@ const typeDefs = gql`
   }
 }
 ```
+> 이전까지는 **GraphQL에 type을 알려주는 법**에 대해 살펴봤습니다. 이제부터는 **Mutation Type**에 대해 살펴볼 예정입니다.
+
+## Mutation Type
+지금까지는 REST API에서의 GET method와 동일한 역할의 내용들을 살펴봤습니다.<br/>
+Mutation Type은, 이전과는 달리 **POST 및 PUT, DELETE**과 같은, 서버측의 디비내용을 수정한다거나 새로 데이터를 추가하거나 하는 행위(Mutation)의 타입을 알려주는 겁니다.<br/>
+자, 아까 타입 정의 코드에 추가해봅시다.
+```javascript
+const typeDefs = gql`
+    type User {
+        id: ID
+        username: String
+    }
+    type Tweet {
+        id: ID
+        text: String
+        author: User
+    }
+    type Query {
+        allTweets: [Tweet]
+        // 여기 이 부분이 바로 Arguments에 해당합니다.
+        tweet(id: ID): Tweet
+    }
+    // this line
+    type Mutation {
+        postTweet(text: String, userId: ID): Tweet
+        deleteTweet(id: ID): Boolean
+    }
+`;
+```
+### 그렇다면 어떻게 mutation을 사용하나요?
+> 저는 아폴로 서버를 로컬에서 돌리고 있습니다.
+```javascript
+mutation {
+    postTweet(text: "Hello, first tweet", userId: "1") {
+        text
+    }
+}
+```
+이런 식으로 작성을 해주시면 됩니다.
+
+## Non Nullable Fields
+다음 타입 정의 스키마를 살펴봅시다.<br/>
+```javascript
+const typeDefs = gql`
+    type User {
+        id: ID
+        username: String
+    }
+    type Tweet {
+        id: ID
+        text: String
+        author: User
+    }
+    type Query {
+        allTweets: [Tweet]
+        tweet(id: ID): Tweet
+    }
+    type Mutation {
+        postTweet(text: String, userId: ID): Tweet
+        deleteTweet(id: ID): Boolean
+    }
+`;
+```
+우리(개발자들)는 데이터를 주고받을때, Null값에 대해 예민하게 생각합니다.<br/>
+> Null값은 연산이 안 되기도 하고, 코드의 맥락을 파악하기도 쉽지 않기도 하고.. 다양한 문제들을 발생할 여지가 많습니다
+
+서버와 통신을 해서 데이터를 얻어올 때, null값을 줄 가능성은 적지 않습니다. 그렇기에 우리는 이건 null값이면 안돼!라는 것을 명시해줄 필요가 있습니다<br/>
+**그렇다면 어떻게 해야할까요?** 윗 코드를 변형하겠습니다.
+```javascript
+const typeDefs = gql`
+    type User {
+        id: ID!
+        username: String!
+    }
+    type Tweet {
+        id: ID!
+        text: String!
+        author: User!
+    }
+    type Query {
+        // allTweets는 항상 배열을 반환해야합니다.
+        // 그리고, Tweet!은 배열 내 원소가 있다면 원소의 타입은 항상 Tweet이어야한다.를 의미합니다.(원소가 없어도 괜찮음)
+        allTweets: [Tweet!]!
+        // 이상한 id(ex: "1111111")이면, 트윗이 없을 수도 있으니 nullable
+        tweet(id: ID): Tweet
+    }
+    type Mutation {
+        // arguments는 String과 ID을 사용, Tweet만을 반환
+        postTweet(text: String!, userId: ID!): Tweet!
+        // Boolean 값만을 반환
+        deleteTweet(id: ID!): Boolean!
+    }
+`;
+```
+이렇게 **Scalar Type** 뒤에 "!"를 붙임으로써, 해당 데이터는 해당 타입만이어야한다라고 정의해주면 됩니다.
