@@ -4,21 +4,21 @@ import { ApolloServer, gql } from "apollo-server";
 // Tweet이라는 커스텀 타입을 만들고, allTweets는 Tweet타입의 원소를 갖는 배열(list)을 반환
 const typeDefs = gql`
     type User {
-        id: ID
-        username: String
+        id: ID!
+        username: String!
     }
     type Tweet {
-        id: ID
+        id: ID!
         text: String
-        author: User
+        author: User!
     }
     type Query {
-        allTweets: [Tweet]
-        tweet(id: ID): Tweet
+        allTweets: [Tweet!]!
+        tweet(id: ID!): Tweet
     }
     type Mutation {
-        postTweet(text: String, userId: ID): Tweet
-        deleteTweet(id: ID): Boolean
+        postTweet(text: String!, userId: ID!): Tweet!
+        deleteTweet(id: ID!): Boolean!
     }
 `;
 const server = new ApolloServer({ typeDefs });
@@ -26,3 +26,12 @@ const server = new ApolloServer({ typeDefs });
 server.listen().then(({ url }) => {
     console.log(`Running on ${url}`);
 });
+
+// GET /api/..../allTweets -> [Tweet]
+// GET /api/.../tweet/:id -> Tweet
+
+// POST /api/../ -> 
+// DELETE
+
+
+// [], [null] [Tweet, Tweet, .., ]
