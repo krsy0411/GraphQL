@@ -1,11 +1,15 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Movies from './routes/Movies';
+import Movie from './routes/Movie';
 
 function App() {
   return (
-    <div className="App">
-      <h1>Hi</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<Movies />}/>
+        <Route path='/movies/:id' element={<Movie />}/>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
