@@ -5,6 +5,7 @@ require('dotenv').config();
 const express = require("express");
 const { ApolloServer, gql } = require("apollo-server-express");
 const db = require('./db');
+const models = require('./models');
 
 // .env 파일에 명시된 포트 or 포트4000에서 서버 실행
 const port = process.env.PORT || 4000;
@@ -38,21 +39,26 @@ const typeDefs = gql`
 const resolvers = {
     Query: {
         hello: () => "Hello World!",
-        notes: () => notes,
-        note: (parent, args) => {
-            return notes.find(note => note.id === args.id);
+        notes: async () => {
+            return await models.Note.find();
+        },
+        note: async (parent, args) => {
+            return await models.Note.findById(args.id);
         }
     },
     Mutation: {
-        newNote: (parent, args) => {
-            let newNoteObject = {
-                id: String(notes.length + 1),
+        newNote: async (parent, args) => {
+            // let newNoteObject = {
+            //     id: String(notes.length + 1),
+            //     content: args.content,
+            //     author: "Adam Scott"
+            // }
+            // notes.push(newNoteObject);
+
+            return await models.Note.create({
                 content: args.content,
                 author: "Adam Scott"
-            }
-            notes.push(newNoteObject);
-
-            return newNoteObject;
+            })
         }
     }
 };
@@ -67,7 +73,6 @@ const server = new ApolloServer({ typeDefs, resolvers });
 
 // async/await를 사용하여 server.start() 호출
 async function startApolloServer() {
-    // Error: You must `await server.start()` before calling `server.applyMiddleware()` : 버전 업데이트 이후 좀 바뀐 듯?
     await server.start();
     // 아폴로 그래프QL 미들웨어를 적용하고 경로를 /api로 설정
     server.applyMiddleware({ app, path: '/api'});
