@@ -1,3 +1,5 @@
+# 현재는 몽구스 DB version 관련 문제는 해결된 상태입니다!
+
 <img src="cover.png" width="200" align="right" />
 
 # JavaScript Everywhere API
