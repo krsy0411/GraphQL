@@ -1,42 +1,103 @@
-module.exports = {
-    newNote: async (parent, args, { models }) => {
-        // let newNoteObject = {
-        //     id: String(notes.length + 1),
-        //     content: args.content,
-        //     author: "Adam Scott"
-        // }
-        // notes.push(newNoteObject);
+// 해싱, 솔팅을 위한 패키지
+const bycrypt = require('bcrypt');
+// jwt 패키지
+const jwt = require('jsonwebtoken');
+// 아폴로 서버의 유틸리티 함수
+const {
+  AuthenticationError,
+  ForbiddenError,
+} = require('apollo-server-express');
+// dotenv 라이브러리를 사용하여 환경 변수 파일(.env)에 정의된 변수를 Node.js 애플리케이션에서 사용할 수 있도록 설정
+require('dotenv').config();
 
-        return await models.Note.create({
-            content: args.content,
-            author: "Adam Scott"
-        })
-    },
-    updateNote: async (parent, { content, id}, { models }) => {
-        // mongoose의 findOneAndUpdate메소드에 3가지 옵션 내용 인자로 전달
-        return await models.Note.findOneAndUpdate(
-            // 조건 객체(filter) : _id가 id와 일치하는 데이터를 찾아냄 : 인자로 받은 id를 데이터 서칭에 사용
-            { _id: id },
-            // 수정 객체(update) : 업데이트할 내용을 정의
-            {
-                // $set 연산자 : 필드를 업데이트할 값을 지정 : 이번 예시엔 content를 업데이트
-                $set: {
-                    content
-                }
-            },
-            // 옵션 객체(options) : 업데이트 작업의 옵션을 정의 -> new: true를 설정하여 업데이트된 문서를 반환하도록 지정
-            // 기본적으로 findOneAndUpdate() 메서드는 업데이트 이전의 문서를 반환
-            { new: true }
-        )
-    },
-    deleteNote: async (parent, { id }, { models }) => {
-        try {
-            // mongoose에서 findOneAndRemove가 사라진건가? : findOneAndRemove는 함수가 아니라고 로그 찍힘
-            // 참고 : https://how-can-i.tistory.com/81
-            await models.Note.findOneAndDelete({ _id : id });
-            return true;
-        } catch(error) {
-            return false;
-        }
+const gravatar = require('../util/gravatar');
+
+module.exports = {
+  newNote: async (parent, args, { models }) => {
+    // let newNoteObject = {
+    //     id: String(notes.length + 1),
+    //     content: args.content,
+    //     author: "Adam Scott"
+    // }
+    // notes.push(newNoteObject);
+
+    return await models.Note.create({
+      content: args.content,
+      author: 'Adam Scott',
+    });
+  },
+  updateNote: async (parent, { content, id }, { models }) => {
+    // mongoose의 findOneAndUpdate메소드에 3가지 옵션 내용 인자로 전달
+    return await models.Note.findOneAndUpdate(
+      // 조건 객체(filter) : _id가 id와 일치하는 데이터를 찾아냄 : 인자로 받은 id를 데이터 서칭에 사용
+      { _id: id },
+      // 수정 객체(update) : 업데이트할 내용을 정의
+      {
+        // $set 연산자 : 필드를 업데이트할 값을 지정 : 이번 예시엔 content를 업데이트
+        $set: {
+          content,
+        },
+      },
+      // 옵션 객체(options) : 업데이트 작업의 옵션을 정의 -> new: true를 설정하여 업데이트된 문서를 반환하도록 지정
+      // 기본적으로 findOneAndUpdate() 메서드는 업데이트 이전의 문서를 반환
+      { new: true },
+    );
+  },
+  deleteNote: async (parent, { id }, { models }) => {
+    try {
+      // mongoose에서 findOneAndRemove가 사라진건가? : findOneAndRemove는 함수가 아니라고 로그 찍힘
+      // 참고 : https://how-can-i.tistory.com/81
+      await models.Note.findOneAndDelete({ _id: id });
+      return true;
+    } catch (error) {
+      return false;
     }
+  },
+  signUp: async (parent, { username, email, password }, { models }) => {
+    // 이메일 주소 스트링 처리
+    email = email.trim().toLowerCase();
+    // 비밀번호 해싱
+    const hashed = await bycrypt.hash(password, 10);
+    // gravatar URL 생성
+    const avatar = gravatar(email);
+
+    try {
+      const user = await models.User.create({
+        username,
+        email,
+        avatar,
+        password: hashed,
+      });
+
+      // JWT 생성
+      return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error creating account');
+    }
+  },
+  signIn: async (parent, { username, email, password }, { models }) => {
+    if (email) {
+      email = email.trim().toLowerCase();
+    }
+
+    // DB에서 사용자 찾기
+    const user = await models.User.findOne({
+      // or 연산자를 사용하여 이메일 또는 사용자 이름으로 사용자 찾기
+      $or: [{ email }, { username }],
+    });
+
+    if (!user) {
+      throw new AuthenticationError('Error signing in');
+    }
+
+    // 사용자가 있는 경우, 비밀번호 일치여부 확인 : 사용자가 입력한 비밀번호와 DB에 저장된 비밀번호 비교
+    const valid = await bycrypt.compare(password, user.password);
+    if (!valid) {
+      throw new AuthenticationError('Error signing in');
+    }
+
+    // JWT 생성 및 반환
+    return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+  },
 };
