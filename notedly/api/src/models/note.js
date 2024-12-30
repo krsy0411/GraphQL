@@ -8,10 +8,20 @@ const noteSchema = new mongoose.Schema(
       required: true,
     },
     author: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: 'User', // User 모델 참조
       required: true,
     },
+    favoriteCount: {
+      type: Number,
+      default: 0, // 기본값 0
+    },
+    favoritedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId, // ObjectId 타입
+        ref: 'User', // User 모델 참조
+      },
+    ],
   },
   {
     // Date 자료형으로 createAt, updateAt 필드 할당

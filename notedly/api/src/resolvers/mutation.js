@@ -121,4 +121,54 @@ module.exports = {
     // JWT 생성 및 반환
     return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
   },
+  toggleFavorite: async (parent, { id }, { models, user }) => {
+    // 1. 전달된 user context가 없으면 에러 던지기
+    if (!user) {
+      throw new AuthenticationError();
+    }
+
+    // 2. 사용자가 노트를 이미 즐겨찾기했는지 확인
+    let noteCheck = await models.Note.findById(id);
+    const hasUser = noteCheck.favoritedBy.indexOf(user.id); // favoritedBy 배열에서 사용자 ID를 찾아보기
+
+    // 사용자가 즐겨찾기 목록에 있는 경우
+    if (hasUser >= 0) {
+      // favoriteCount를 1 줄이고, favoritedBy 배열에서 사용자 ID를 제거
+      return await models.Note.findByIdAndUpdate(
+        // note의 ID로 찾기
+        id,
+        {
+          // 업데이트 연산자 : 배열에서 특정 값을 제거
+          $pull: {
+            favoritedBy: new mongoose.Types.ObjectId(user.id),
+          },
+          // 업데이트 연산자 : 숫자 필드의 값을 증가 또는 감소
+          $inc: {
+            favoriteCount: -1,
+          },
+        },
+        {
+          // 업데이트된 문서를 반환하도록 설정(default는 false)
+          new: true,
+        },
+      );
+    } else {
+      // 사용자가 목록에 없는 경우 : favoriteCount를 1 증가시키고, favoritedBy 배열에 사용자 ID 추가
+      return await models.Note.findByIdAndUpdate(
+        id,
+        {
+          // 업데이트 연산자: 배열에 새로운 요소를 추가
+          $push: {
+            favoritedBy: new mongoose.Types.ObjectId(user.id),
+          },
+          $inc: {
+            favoriteCount: 1,
+          },
+        },
+        {
+          new: true,
+        },
+      );
+    }
+  },
 };
