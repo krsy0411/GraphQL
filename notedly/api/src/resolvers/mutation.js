@@ -7,26 +7,35 @@ const {
   AuthenticationError,
   ForbiddenError,
 } = require('apollo-server-express');
+const gravatar = require('../util/gravatar');
+const mongoose = require('mongoose');
+
 // dotenv 라이브러리를 사용하여 환경 변수 파일(.env)에 정의된 변수를 Node.js 애플리케이션에서 사용할 수 있도록 설정
 require('dotenv').config();
 
-const gravatar = require('../util/gravatar');
-
 module.exports = {
-  newNote: async (parent, args, { models }) => {
-    // let newNoteObject = {
-    //     id: String(notes.length + 1),
-    //     content: args.content,
-    //     author: "Adam Scott"
-    // }
-    // notes.push(newNoteObject);
+  newNote: async (parent, args, { models, user }) => {
+    // context에 user가 없으면 인증 에러 반환
+    if (!user) {
+      throw new AuthenticationError('You must be signed in to create a note');
+    }
 
     return await models.Note.create({
       content: args.content,
-      author: 'Adam Scott',
+      // author의 몽고ID 참조
+      author: new mongoose.Types.ObjectId(user.id),
     });
   },
-  updateNote: async (parent, { content, id }, { models }) => {
+  updateNote: async (parent, { content, id }, { models, user }) => {
+    if (!user) {
+      throw new AuthenticationError('You must be signed in to update a note');
+    }
+
+    const note = await models.Note.findById(id);
+    if (note && String(note.author) !== user.id) {
+      throw new ForbiddenError("You don't have permission to update the note");
+    }
+
     // mongoose의 findOneAndUpdate메소드에 3가지 옵션 내용 인자로 전달
     return await models.Note.findOneAndUpdate(
       // 조건 객체(filter) : _id가 id와 일치하는 데이터를 찾아냄 : 인자로 받은 id를 데이터 서칭에 사용
@@ -43,11 +52,23 @@ module.exports = {
       { new: true },
     );
   },
-  deleteNote: async (parent, { id }, { models }) => {
+  deleteNote: async (parent, { id }, { models, user }) => {
+    // user가 아니면 인증 에러 반환
+    if (!user)
+      throw new AuthenticationError('You must be signed in to delete a note');
+
+    const note = await models.Note.findById(id);
+
+    if (note && String(note.author) !== user.id) {
+      throw new ForbiddenError("You don't have permission to delete the note");
+    }
+
     try {
       // mongoose에서 findOneAndRemove가 사라진건가? : findOneAndRemove는 함수가 아니라고 로그 찍힘
       // 참고 : https://how-can-i.tistory.com/81
-      await models.Note.findOneAndDelete({ _id: id });
+
+      // 문제가 없으면 note 삭제
+      await note.remove();
       return true;
     } catch (error) {
       return false;

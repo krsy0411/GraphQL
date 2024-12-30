@@ -42,7 +42,7 @@ const server = new ApolloServer({
   resolvers,
   context: ({ req }) => {
     const token = req.headers.authorization; // 헤더에서 사용자 토큰 가져오기
-    const user = getUser(token); // 토큰에서 사용자 얻기 : payload 반환
+    const user = getUser(token); // 토큰에서 사용자 얻기 : payload를 포함한 객체 반환
 
     console.log(user); // 콘솔에 사용자 정보 출력
 
