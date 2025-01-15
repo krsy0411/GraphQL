@@ -1,7 +1,7 @@
 # GraphQL에 대해서 학습하는 공간
 <a href="https://thistimenull.notion.site/GraphQL-1731118ea06f80bb8b64e9f7599c3b41?pvs=4" alt="graphql-notion-docs">GraphQL 노션 정리 공간</a>
 ## Apollo Server란?
-<a href="https://www.notion.so/thistimenull/Apollo-Server-1771118ea06f8096966ec7e59e4f1d38?pvs=4" alt="graphql-notion-docs/apollo-server">GraphQL 노션 정리 공간</a>
+<a href="https://www.notion.so/thistimenull/Apollo-Server-1771118ea06f8096966ec7e59e4f1d38?pvs=4" alt="graphql-notion-docs/apollo-server">Apollo Server란?</a>
 
 ## RESTAPI의 어떤 점을 개선했을까?
 <a href="https://www.notion.so/thistimenull/GraphQL-REST-API-1771118ea06f80dda130d6c68e58aeb3?pvs=4" alt="graphql-notion-docs/improved-thing">REST API 개선점</a>
